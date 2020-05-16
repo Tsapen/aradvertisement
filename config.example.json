@@ -1,0 +1,34 @@
+{
+    "radius": 10
+,   "storage_directory":"./"
+,   "cert_file": "./server.crt"
+,   "key_file": "./server.key"
+
+,   "auth": {
+       "set_manually": true
+,	    "access_secret": "jdnfksdmfksd"
+,	    "refresh_secret": "mcmvmkmsdnfsdmfdsjf"
+    }
+
+,	"http": {
+        "port":":8000"
+	,	"read_timeout": "10s"
+    ,   "write_timeout": "10s"
+    }
+
+,	"ara_db": {
+		"username": "ara_user"
+	,	"password": "ara_password"
+	,	"hostname": "localhost"
+	,	"port": "5432"
+    ,   "virtual_host": "/ara_db"
+    }
+    
+,   "auth_db": {
+        "username": "auth_user"
+    ,	"password": "auth_password"
+    ,	"hostname": "localhost"
+    ,	"port": "5432"
+    ,	"virtual_host": "/auth_db"
+    }
+}
