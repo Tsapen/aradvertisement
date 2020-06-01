@@ -2,7 +2,6 @@ package aratest
 
 import (
 	"context"
-	"net/url"
 )
 
 type cxtKey int
@@ -12,12 +11,12 @@ const (
 	tokenKey
 )
 
-func withHostPort(ctx context.Context, hostport url.URL) context.Context {
+func withHostPort(ctx context.Context, hostport string) context.Context {
 	return context.WithValue(ctx, hostPortKey, hostport)
 }
 
-func hostPortFromCtx(ctx context.Context) url.URL {
-	return ctx.Value(hostPortKey)
+func hostPortFromCtx(ctx context.Context) string {
+	return ctx.Value(hostPortKey).(string)
 }
 
 func withToken(ctx context.Context, token string) context.Context {
@@ -25,5 +24,9 @@ func withToken(ctx context.Context, token string) context.Context {
 }
 
 func tokenFromCtx(ctx context.Context) string {
-	return ctx.Value(tokenKey)
+	var token, ok = ctx.Value(tokenKey).(string)
+	if !ok {
+		return ""
+	}
+	return token
 }

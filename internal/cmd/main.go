@@ -5,42 +5,51 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/Tsapen/aradvertisement/internal/arahttp"
 	"github.com/Tsapen/aradvertisement/internal/filestore"
 	"github.com/Tsapen/aradvertisement/internal/jwt"
 	"github.com/Tsapen/aradvertisement/internal/postgres"
+	"github.com/Tsapen/aradvertisement/internal/redis"
+)
+
+const (
+	certDir = `certs`
 )
 
 type config struct {
-	Radius           int    `json:"radius"`
-	StorageDirectory string `json:"storage_directory"`
-	CertFile         string `json:"cert_file"`
-	KeyFile          string `json:"key_file"`
-	Auth             auth   `json:"auth"`
-	HTTP             http   `json:"http"`
-	AraDB            db     `json:"ara_db"`
-	AuthDB           db     `json:"auth_db"`
+	Radius           int      `json:"radius"`
+	StorageDirectory string   `json:"storage_directory"`
+	Auth             authCfg  `json:"auth"`
+	HTTP             httpCfg  `json:"http"`
+	AraDB            dbCfg    `json:"ara_db"`
+	Redis            redisCfg `json:"redis"`
 }
 
-type auth struct {
+type authCfg struct {
 	SetManually   bool   `json:"set_manually"`
 	AccessSecret  string `json:"access_secret"`
 	RefreshSecret string `json:"refresh_secret"`
 }
 
-type http struct {
+type httpCfg struct {
 	Port         string `json:"port"`
 	ReadTimeout  string `json:"read_timeout"`
 	WriteTimeout string `json:"write_timeout"`
 }
 
-type db struct {
+type dbCfg struct {
 	UserName    string `json:"username"`
 	Password    string `json:"password"`
 	HostName    string `json:"hostname"`
 	Port        string `json:"port"`
 	VirtualHost string `json:"virtual_host"`
+}
+
+type redisCfg struct {
+	Dsn      string `json:"dsn"`
+	Password string `json:"password"`
 }
 
 func main() {
@@ -53,14 +62,20 @@ func main() {
 }
 
 func run(c *config) {
-	var pwd, _ = os.Getwd()
+	var err error
+	var pwd string
+	pwd, err = os.Getwd()
+	if err != nil {
+		panic(fmt.Sprintf("can't prepare auth db: %s", err))
+	}
 
 	var sec = jwt.Secrets(c.Auth)
 	if err := jwt.PrepareAuthEnvironment(sec); err != nil {
 		panic(fmt.Sprintf("can't prepare jwt environment: %s", err))
 	}
 
-	var s, err = filestore.PrepareStorage(c.StorageDirectory)
+	var s *filestore.Storage
+	s, err = filestore.PrepareStorage(c.StorageDirectory)
 	if err != nil {
 		panic(fmt.Sprintf("can't connect with storage: %s", err))
 	}
@@ -73,20 +88,16 @@ func run(c *config) {
 		panic(fmt.Sprintf("can't connect with ara db: %s", err))
 	}
 
+	// auth db
+	var redisClient *redis.Client
+	var cRedis = &redis.Config{Dsn: c.Redis.Dsn, Password: c.Redis.Password}
+	redisClient, err = redis.NewRedisClient(cRedis)
+	if err != nil {
+		panic(fmt.Sprintf("can't prepare auth db: %s", err))
+	}
+
 	if err := araDB.AraMigrate(); err != nil {
 		panic(fmt.Sprintf("can't prepare ara db: %s", err))
-	}
-
-	// auth db
-	var cAuthDB = postgres.Config(c.AuthDB)
-	var authDB *postgres.DB
-	authDB, err = postgres.NewDBConnection(&cAuthDB)
-	if err != nil {
-		panic(fmt.Sprintf("can't connect with auth db: %s", err))
-	}
-
-	if err := authDB.AuthMigrate(); err != nil {
-		panic(fmt.Sprintf("can't prepare auth db: %s", err))
 	}
 
 	var cHTTP = arahttp.Config{
@@ -94,7 +105,7 @@ func run(c *config) {
 		ReadTimeout:  c.HTTP.ReadTimeout,
 		WriteTimeout: c.HTTP.WriteTimeout,
 		AraDB:        araDB,
-		AuthDB:       authDB,
+		AuthDB:       redisClient,
 		Storage:      s,
 	}
 
@@ -106,7 +117,11 @@ func run(c *config) {
 
 	log.Printf("main: start listening %s", c.HTTP.Port)
 
-	api.Start(pwd+"/server.crt", pwd+"/server.key")
+	api.Start(getCertPath(pwd, "/server.crt"), getCertPath(pwd, "/server.key"))
+}
+
+func getCertPath(projectDir, fileName string) string {
+	return filepath.Join(projectDir, certDir, fileName)
 }
 
 func openConfig(cPath string) *config {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://192.168.1.52:8000/api/auth/';
+const API_URL = 'http://192.168.1.52:8000/api/auth/';
 
 class AuthService {
   login(user) {
@@ -11,7 +11,6 @@ class AuthService {
       })
       .then(response => {
         if (response.data) {
-          console.log(response.data)
           localStorage.setItem('user', JSON.stringify(response.data));
         }
 

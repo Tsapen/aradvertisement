@@ -6,9 +6,8 @@ import (
 
 // CreateUser creates user.
 func (s *DB) CreateUser(user ara.UserCreationInfo) error {
-	var q = `INSERT INTO users(username, email) VALUES ($1, $2);`
-
-	var _, err = s.Exec(q, user.Username, user.Email)
+	var q = `INSERT INTO users(username, password, email) VALUES ($1, $2, $3);`
+	var _, err = s.Exec(q, user.Username, user.Password, user.Email)
 	return err
 }
 
@@ -23,4 +22,17 @@ func (s *DB) DeleteUser(username string) error {
 	q = `DELETE FROM users WHERE username = $1;`
 	var _, err = s.Exec(q, username)
 	return err
+}
+
+// CheckLogin returns true if user exists.
+func (s *DB) CheckLogin(ul ara.UserLogin) (bool, error) {
+	var q = `SELECT 1 FROM users WHERE username = $1 AND password = $2;`
+	var err error
+	var dummy int
+	err = s.QueryRow(q, ul.Username, ul.Password).Scan(&dummy)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

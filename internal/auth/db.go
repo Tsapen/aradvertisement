@@ -25,8 +25,6 @@ type User struct {
 // DB is a database interface.
 type DB interface {
 	CreateAuth(string, *TokenDetails) error
-	DeleteAuth(givenUUID string) error
 	FetchAuth(authD *AccessDetails) (string, error)
-	InsertUser(User) error
-	CheckLogin(User) (bool, error)
+	DeleteAuth(string) error
 }

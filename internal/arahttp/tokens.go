@@ -23,6 +23,7 @@ type loginTokens struct {
 }
 
 func (h *handler) registration(w http.ResponseWriter, r *http.Request) {
+	var err error
 	var m = r.Method
 	var url = r.URL
 	log.Printf("%s %s\n", m, url)
@@ -34,9 +35,8 @@ func (h *handler) registration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var authUser = auth.User{Username: u.Username, Password: u.Password}
-	var err = h.authDB.InsertUser(authUser)
-	if err != nil {
+	var userCreationData = ara.UserCreationInfo(u)
+	if err := h.araDB.CreateUser(userCreationData); err != nil {
 		processError(w, url, m, "can't create user", err)
 		return
 	}
@@ -51,11 +51,6 @@ func (h *handler) registration(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.authDB.CreateAuth(u.Username, ts); err != nil {
 		processError(w, url, m, "can't save token", err)
-		return
-	}
-
-	if err := h.araDB.CreateUser(ara.UserCreationInfo{Username: u.Username}); err != nil {
-		processError(w, url, m, "can't create user", err)
 		return
 	}
 
@@ -108,7 +103,7 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ok, err = h.authDB.CheckLogin(auth.User(u))
+	var ok, err = h.araDB.CheckLogin(ara.UserLogin(u))
 	if err != nil {
 		processError(w, url, m, "user not found", err)
 		return

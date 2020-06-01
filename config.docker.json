@@ -1,0 +1,29 @@
+{
+    "radius": 10
+,   "storage_directory":"./"
+
+,   "auth": {
+       "set_manually": true
+,	    "access_secret": "jdnfksdmfksd"
+,	    "refresh_secret": "mcmvmkmsdnfsdmfdsjf"
+    }
+
+,	"http": {
+        "port":":8000"
+	,	"read_timeout": "10s"
+    ,   "write_timeout": "10s"
+    }
+
+,	"ara_db": {
+		"username": "ara_user"
+	,	"password": "ara_password"
+	,	"hostname": "ara_db"
+	,	"port": "5432"
+    ,   "virtual_host": "ara_db"
+    }
+    
+,   "redis": {
+        "dsn": "auth_db:6379"
+    ,   "password": ""
+    }
+}

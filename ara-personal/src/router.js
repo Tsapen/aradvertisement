@@ -24,13 +24,7 @@ export const router = new Router({
       name: 'profile',
       // lazy-loaded
       component: () => import('./views/Profile.vue')
-    },
-    {
-      path: '/ar',
-      name: 'ar',
-      // lazy-loaded
-      component: () => import('./views/AR.vue')
-    } 
+    }
   ]
 });
 

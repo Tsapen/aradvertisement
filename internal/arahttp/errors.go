@@ -18,7 +18,7 @@ type errWithStatus struct {
 }
 
 func (err errWithStatus) Error() string {
-	return err.Error()
+	return err.err.Error()
 }
 
 func processError(w http.ResponseWriter, url *url.URL, method, message string, err error) {

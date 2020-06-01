@@ -5,6 +5,7 @@ type ObjectCreationInfo struct {
 	Username  string
 	Latitude  float64
 	Longitude float64
+	Comment   string
 }
 
 // ObjectSelectInfo is struct for doing select.
@@ -29,6 +30,7 @@ type ObjectUpdateInfo struct {
 type UserCreationInfo struct {
 	Username string
 	Email    string
+	Password string
 }
 
 // UserObjectSelectResp contains useful object information for user.
@@ -37,6 +39,12 @@ type UserObjectSelectResp struct {
 	Comment   string
 	Latitude  float64
 	Longitude float64
+}
+
+// UserLogin struct contains info for login.
+type UserLogin struct {
+	Username string
+	Password string
 }
 
 // DB is a database interface.
@@ -49,4 +57,6 @@ type DB interface {
 
 	CreateUser(UserCreationInfo) error
 	DeleteUser(string) error
+
+	CheckLogin(UserLogin) (bool, error)
 }

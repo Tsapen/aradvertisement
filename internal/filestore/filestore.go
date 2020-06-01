@@ -13,8 +13,9 @@ type Storage struct {
 }
 
 const (
-	storageDirName = "gltf_storage"
 	arPage         = "AR.html"
+	storageDirName = "gltf_storage"
+	maxFileSize    = 16 * 1024 * 1024
 )
 
 // FileMetadata contains metadata for object found.
@@ -33,15 +34,16 @@ func NewFM(username string, name int) FileMetadata {
 
 // PrepareStorage prepares storage.
 func PrepareStorage(path string) (*Storage, error) {
+	var err error
 	var storagePath = filepath.Join(path, storageDirName)
 	if err := os.Mkdir(storagePath, 0777); err != nil && !os.IsExist(err) {
 		return nil, err
 	}
 
-	if err := os.Chdir(storagePath); err != nil {
+	storagePath, err = filepath.Abs(storagePath)
+	if err != nil {
 		return nil, err
 	}
-
 	var s = Storage{
 		storagePath: storagePath,
 	}
@@ -65,30 +67,23 @@ func (s *Storage) DeleteUserDir(dir string) error {
 }
 
 // WriteFile writes file to path.
-func (s *Storage) WriteFile(fm FileMetadata, b []byte) error {
+func (s *Storage) WriteFile(fm FileMetadata, b []byte) (err error) {
 	var filePath = filepath.Join(s.storagePath, fm.Username, fm.Name)
-	var f, err = os.Create(filePath)
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Write(b)
-	return err
+	err = ioutil.WriteFile(filePath+".gltf", b, 0777)
+	return
 }
 
 // ReadFile reads file.
 func (s *Storage) ReadFile(fm FileMetadata) ([]byte, error) {
 	var filePath = filepath.Join(s.storagePath, fm.Username, fm.Name)
-	return ioutil.ReadFile(filePath)
+	return ioutil.ReadFile(filePath + ".gltf")
 }
 
 // DeleteFile deletes file.
 func (s *Storage) DeleteFile(fm FileMetadata) error {
 	var filePath = filepath.Join(s.storagePath, fm.Username, fm.Name)
-	return os.Remove(filePath)
+	return os.Remove(filePath + ".gltf")
 }
-
-// TODO delete
 
 // GetARPage returns ar page.
 func (s *Storage) GetARPage() ([]byte, error) {
@@ -96,7 +91,7 @@ func (s *Storage) GetARPage() ([]byte, error) {
 }
 
 func (s *Storage) getPage(page string) ([]byte, error) {
-	var path = filepath.Join("..", "ara-personal", "src", "views", "html", page)
+	var path = filepath.Join("ara-personal", "src", "views", "html", page)
 
 	var f, err = ioutil.ReadFile(path)
 	if err != nil {

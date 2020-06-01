@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>ara-creation</title>
+  <script type="application/javascript" src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+  <script type="application/javascript" src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+  <script type="application/javascript" src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+  <script type="application/javascript" src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script type="application/javascript" src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+  <body style="margin: 0px 0px 50% 0px; overflow: hidden;">
+    <a-scene vr-mode-ui="enabled: false"
+      embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+      <a-text
+        value="ARA"
+        look-at="[gps-camera]"
+        scale="45 45 45"
+        gps-entity-place="latitude: 55.645811; longitude: 37.649352;"
+      ></a-text>
+      <a-camera gps-camera rotation-reader> </a-camera>
+    </a-scene>
+  <script type="text/javascript">
+    new Vue({
+      el: '#ara_creation',
+      data: {
+        text_value: {message: ''}
+      },
+      created: function(){
+        console.log("created");
+      },
+      methods: {
+        createObject(){
+        }
+      }
+    })
+  </script>
+</body>
+</html>

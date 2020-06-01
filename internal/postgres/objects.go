@@ -9,12 +9,12 @@ import (
 // CreateObject put new glTF object path in db.
 func (s *DB) CreateObject(obj ara.ObjectCreationInfo) (int, error) {
 	var q = `
-	INSERT INTO objects(user_id, latitude, longitude) VALUES (
-		SELECT id FROM users WHERE users.username = $1, 
-		$2, $3) RETURNING id;`
+	INSERT INTO objects(user_id, latitude, longitude, comment) VALUES ((
+		SELECT id FROM users WHERE users.username = $1), 
+		$2, $3, $4) RETURNING id;`
 
 	var id int
-	var err = s.QueryRow(q, obj.Username, obj.Latitude, obj.Longitude).Scan(&id)
+	var err = s.QueryRow(q, obj.Username, obj.Latitude, obj.Longitude, obj.Comment).Scan(&id)
 	if err != nil {
 		return 0, err
 	}

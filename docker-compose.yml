@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  ara_db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: "ara_db"
+      POSTGRES_USER: "ara_user"
+      POSTGRES_PASSWORD: "ara_password"
+    ports:
+      - 5432:5432
+        
+  auth_db:
+    image: "redis:alpine"
+    restart: always
+    ports:
+      - 6379:6379
+        
+  web:
+    build: .
+    ports:
+      - 8000:8000
+    depends_on: 
+      - ara_db
+      - auth_db
+    links:
+      - ara_db
+      - auth_db

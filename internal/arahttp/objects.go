@@ -119,27 +119,36 @@ func (h *handler) userObjects(w http.ResponseWriter, r *http.Request) {
 type newObjectReq struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	GLTF      []byte  `json:"gltf"`
+	Comment   string  `json:"comment"`
 }
 
 func (h *handler) newObject(w http.ResponseWriter, r *http.Request) {
+	var err error
 	var m = r.Method
 	var url = r.URL
 	log.Printf("%s %s\n", m, url)
 
-	var obj newObjectReq
-	if err := extractBody(r, &obj); err != nil {
-		processError(w, url, m, "can't extract body", err)
+	var obj = &newObjectReq{}
+	var file []byte
+	file, err = getFileWithPars(r, obj)
+	if err != nil {
+		processError(w, url, m, "parse request error", err)
 		return
 	}
 
-	var username, err = getUsername(r)
+	var username string
+	username, err = getUsername(r)
 	if err != nil {
 		processError(w, url, m, "username not found", err)
 		return
 	}
 
-	var creationInfo = ara.ObjectCreationInfo{username, obj.Latitude, obj.Longitude}
+	var creationInfo = ara.ObjectCreationInfo{
+		Username:  username,
+		Latitude:  obj.Latitude,
+		Longitude: obj.Longitude,
+		Comment:   obj.Comment,
+	}
 	var pars = ara.ObjectCreationInfo(creationInfo)
 
 	var id int
@@ -150,7 +159,7 @@ func (h *handler) newObject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var fm = filestore.NewFM(username, id)
-	if err := h.storage.WriteFile(fm, obj.GLTF); err != nil {
+	if err := h.storage.WriteFile(fm, file); err != nil {
 		processError(w, url, m, "can't write file", err)
 
 		defer func() {
@@ -188,6 +197,11 @@ func (h *handler) updateObject(w http.ResponseWriter, r *http.Request) {
 	var m = r.Method
 	var url = r.URL
 	log.Printf("%s %s\n", m, url)
+
+	if _, err := getUsername(r); err != nil {
+		processError(w, url, m, "username not found", err)
+		return
+	}
 
 	var info objectUpdateInfo
 	if err := extractBody(r, &info); err != nil {

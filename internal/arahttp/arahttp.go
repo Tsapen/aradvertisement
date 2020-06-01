@@ -1,7 +1,7 @@
 package arahttp
 
 import (
-	"crypto/tls"
+	"html/template"
 	"log"
 	"net/http"
 	"time"
@@ -34,6 +34,13 @@ type handler struct {
 	authDB  auth.DB
 	router  *mux.Router
 	storage *filestore.Storage
+	tmps    templates
+}
+
+type templates struct {
+	Text *template.Template
+	Img  *template.Template
+	GLTF *template.Template
 }
 
 // NewAPI creates new api.
@@ -61,8 +68,8 @@ func NewAPI(config *Config) (*API, error) {
 	r.HandleFunc("/api/auth/logout", h.logout).Methods(http.MethodPost)
 	r.HandleFunc("/api/auth/refresh", h.refresh).Methods(http.MethodPost)
 
-	// TODO: remove it
-	r.HandleFunc("/api/ar", h.arPage).Methods(http.MethodGet)
+	r.HandleFunc("/api/ar", h.arPage).
+		Queries("id", "{id}").Methods(http.MethodGet)
 
 	var wrappedHandler = withHeaders(h.router)
 
@@ -83,18 +90,30 @@ func NewAPI(config *Config) (*API, error) {
 }
 
 func newServer(addr string, h http.Handler, rt, wt time.Duration) *http.Server {
+
+	// certManager := autocert.Manager{
+	// 	Prompt:     autocert.AcceptTOS,
+	// 	HostPolicy: autocert.HostWhitelist("192.168.1.52"),
+	// 	Cache:      autocert.DirCache("certs"),
+	// }
+
 	return &http.Server{
 		Addr:         addr,
 		Handler:      h,
 		ReadTimeout:  rt,
 		WriteTimeout: wt,
-		TLSConfig:    &tls.Config{InsecureSkipVerify: true},
+		// TLSConfig: &tls.Config{
+		// 	GetCertificate:     certManager.GetCertificate,
+		// 	InsecureSkipVerify: true,
+		// 	ClientAuth:         tls.RequireAndVerifyClientCert,
+		// },
 	}
 }
 
 // Start run server.
 func (a *API) Start(crt, key string) {
 	if err := a.ListenAndServeTLS(crt, key); err != nil {
+		// if err := a.ListenAndServe(); err != nil {
 		log.Printf("api.Start error: %s\n", err)
 	}
 }

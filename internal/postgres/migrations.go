@@ -17,16 +17,17 @@ func araDBMigrations() []dbMigration {
 			number: 1,
 			command: `
 			CREATE TABLE IF NOT EXISTS users(
-				id			SERIAL NOT NULL PRIMARY KEY
-			,	username 	VARCHAR(100) NOT NULL UNIQUE
-			,	email		VARCHAR(100) NOT NULL
+					id			SERIAL NOT NULL PRIMARY KEY
+				,	username 	VARCHAR(100) NOT NULL UNIQUE
+				,	password	VARCHAR(100) NOT NULL
+				,	email		VARCHAR(100) NOT NULL
 			);`,
 		},
 
 		dbMigration{
 			number: 2,
 			command: `
-			CREATE UNIQUE INDEX ON users(username) USING hash;
+			CREATE INDEX usernames ON users USING hash (username);
 			`,
 		},
 
@@ -45,44 +46,7 @@ func araDBMigrations() []dbMigration {
 		dbMigration{
 			number: 4,
 			command: `
-			CREATE INDEX ON objects(latitude, longitude) USING hash;
-			`,
-		},
-	}
-}
-
-func authDBMigrations() []dbMigration {
-	return []dbMigration{
-		dbMigration{
-			number: 1,
-			command: `
-			CREATE TABLE IF NOT EXISTS tokens(
-				uuid		VARCHAR(230) NOT NULL UNIQUE
-			,	username 	VARCHAR(100) NOT NULL 
-			, 	exp			BIGINT NOT NULL 
-			);`,
-		},
-
-		dbMigration{
-			number: 2,
-			command: `
-			CREATE UNIQUE INDEX ON tokens(uuid) USING hash;
-			`,
-		},
-
-		dbMigration{
-			number: 3,
-			command: `
-			CREATE TABLE users(
-				username	VARCHAR(100) NOT NULL UNIQUE
-			,	password	VARCHAR(100) NOT NULL
-			);`,
-		},
-
-		dbMigration{
-			number: 4,
-			command: `
-			CREATE UNIQUE INDEX ON users(username) USING hash;
+			CREATE INDEX locations ON objects USING hash(latitude, longitude);
 			`,
 		},
 	}
@@ -116,11 +80,6 @@ func (db *DB) apply(num int) error {
 // AraMigrate prepares ara db to work.
 func (db *DB) AraMigrate() error {
 	return db.migrate(araDBMigrations())
-}
-
-// AuthMigrate prepares auth db to work.
-func (db *DB) AuthMigrate() error {
-	return db.migrate(authDBMigrations())
 }
 
 func (db *DB) migrate(migs []dbMigration) error {

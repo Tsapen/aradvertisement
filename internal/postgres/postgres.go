@@ -24,25 +24,22 @@ type DB struct {
 
 func (c *Config) dbAddr() string {
 	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%s%s",
-		c.UserName,
-		c.Password,
-		c.HostName,
-		c.Port,
-		c.VirtualHost)
+		"user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		c.UserName, c.Password, c.HostName, c.Port, c.VirtualHost)
 }
 
 // NewDBConnection create new storage.
 func NewDBConnection(c *Config) (*DB, error) {
+	var err error
 	var dbAddr = c.dbAddr()
-
-	db, err := sql.Open("postgres", dbAddr)
+	var db *sql.DB
+	db, err = sql.Open("postgres", dbAddr)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't open connection")
+		return nil, errors.Wrap(err, fmt.Sprintf("can't open connection %s", dbAddr))
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, fmt.Sprintf("can't ping with connection %s", dbAddr))
 	}
 
 	return &DB{db}, nil

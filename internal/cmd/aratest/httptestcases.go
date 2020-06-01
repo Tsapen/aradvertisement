@@ -13,18 +13,17 @@ const (
 
 	lat1     = 50.000000
 	lat2     = 51.000000
-	lat3     = 51.000000
+	lat3     = 51.000001
 	long1    = 50.000000
 	long2    = 51.000000
-	long3    = 51.000000
+	long3    = 51.000001
 	comment1 = "1st obj"
 	comment2 = "2st obj"
 	comment3 = "2st obj"
-	degree   = 113200
+	// degree   = 113200
 )
 
 type ei = interface{}
-type f = float32
 type msi = map[string]ei
 type smsi = []msi
 
@@ -36,89 +35,117 @@ func testRegisterUser(ctx context.Context, t *testing.T) {
 		"password": testPassword,
 	}
 	var tokens = httpPost(ctx, t, url, body)
-	ctx = withToken(ctx, tokens["access_token"])
+	ctx = withToken(ctx, tokens["access_token"].(string))
 
-	logout(ctx)
+	logout(ctx, t)
 }
 
 func testLoginUser(ctx context.Context, t *testing.T) {
-	ctx = login(ctx)
-	logout(ctx)
+	ctx = login(ctx, t)
+	logout(ctx, t)
+}
+
+func getDefaultObjects() smsi {
+	return smsi{
+		msi{"latitude": lat1, "longitude": long1, "comment": comment1, "glTF": []byte{}},
+		msi{"latitude": lat2, "longitude": long2, "comment": comment2, "glTF": []byte{}},
+		msi{"latitude": lat3, "longitude": long3, "comment": comment3, "glTF": []byte{}},
+	}
 }
 
 func testCRUDObjects(ctx context.Context, t *testing.T) {
-	ctx = login(ctx)
-	defer logout(ctx)
+	var url string
+	// var err error
+	ctx = login(ctx, t)
+	defer logout(ctx, t)
 
-	// Create testing.
-	var objs = smsi{
-		msi{"latidude": lat1, "longitude": long1, comment: comment1, "glTF": []byte{}},
-		msi{"latidude": lat2, "longitude": long2, comment: comment2, "glTF": []byte{}},
-		msi{"latidude": lat3, "longitude": long3, comment: comment3, "glTF": []byte{}},
-	}
-
-	var url = getAddr(ctx, "/api/object")
+	// 1. Create testing.
+	var objs = getDefaultObjects()
 	for _, obj := range objs {
-		var resp = httpPost(t, url, obj)
-		var success = resp["success"].(bool)
-		if success != true {
-			t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", success, true)
-		}
+		createFile(ctx, t, obj)
+
 	}
 
-	// Read testing.
+	// 2. Read testing.
+	// 2.1. User objects reading.
 	url = getAddr(ctx, "/api/user_objects")
-	var r = httpGet(t, ctx, url)
+	var r = httpGet(ctx, t, url)
 	var exp = smsi{
 		msi{"location": getLoc(lat1, long1), "comment": comment1},
 		msi{"location": getLoc(lat2, long2), "comment": comment2},
 		msi{"location": getLoc(lat3, long3), "comment": comment3},
 	}
-	if len(r) != len(exp) {
+	var objInfo = r["response"].([]ei)
+
+	if len(objInfo) != len(exp) {
 		t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp, r)
 	}
 
-	for num, obj := range r {
-		exp[num]["id"] = obj["id"]
+	for num, obj := range objInfo {
+		exp[num]["id"] = obj.(msi)["id"]
+	}
+
+	for num, obj := range objInfo {
 		if !reflect.DeepEqual(exp[num], obj) {
 			t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp[num], obj)
 		}
 	}
 
-	// Update testing.
+	// // 2.2. Objects around reading.
+	// var rawQuery = fmt.Sprintf("latitude=%f&longitude=%f", lat2, long2)
+	// url = getAddrWithParams(ctx, "/api/objects_around", rawQuery)
+	// r = httpGet(ctx, t, url)
+	// var objAround = r["response"].(smsi)
+
+	// var expObjAround = objs[1:]
+	// if len(objAround) != len(expObjAround) {
+	// 	t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp, r)
+	// }
+
+	// for num, obj := range objAround {
+	// 	expObjAround[num]["id"] = obj["id"]
+	// }
+
+	// for num, obj := range objAround {
+	// 	if !reflect.DeepEqual(expObjAround[num], obj) {
+	// 		t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", expObjAround[num], obj)
+	// 	}
+	// }
+
+	// 3. Update testing.
 	url = getAddr(ctx, "/api/object/upd")
-	var updComment = exp[2]["comment"] + " updated"
-	var updated = msi{
-		"id":      exp[2]["id"],
-		"comment": updComment,
-	}
-	r = httpPost(t, ctx, url, upd)
-	success = r["success"].(bool)
+
+	var updComment = exp[2]["comment"].(string) + " updated"
+	exp[2]["comment"] = updComment
+	var updated = exp[2]
+
+	r = httpPost(ctx, t, url, updated)
+	var success = r["success"].(bool)
 	if !success {
 		t.Fatalf("unexpected result:\nexp: %v\ngot: %v\n", true, success)
 	}
 
-	exp[2]["comment"] = updComment
 	url = getAddr(ctx, "/api/user_objects")
-	var r = httpGet(t, ctx, url)
+	r = httpGet(ctx, t, url)
+	objInfo = r["response"].([]ei)
 
-	if len(r) != len(exp) {
+	if len(objInfo) != len(exp) {
 		t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp, r)
 	}
 
-	for num, obj := range r {
-		exp[num]["id"] = obj["id"]
+	for num, obj := range objInfo {
 		if !reflect.DeepEqual(exp[num], obj) {
 			t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp[num], obj)
 		}
 	}
 
-	// Delete object.
+	// 4. Delete object.
 	url = getAddr(ctx, "/api/object/del")
-	var del = msi{
+	var delReqBody = msi{
 		"id": exp[2]["id"],
 	}
-	r = httpPost(t, ctx, url, del)
+
+	r = httpPost(ctx, t, url, delReqBody)
 	success = r["success"].(bool)
 	if !success {
 		t.Fatalf("unexpected result:\nexp: %v\ngot: %v\n", true, success)
@@ -126,31 +153,17 @@ func testCRUDObjects(ctx context.Context, t *testing.T) {
 
 	exp = exp[:2]
 	url = getAddr(ctx, "/api/user_objects")
-	var r = httpGet(t, ctx, url)
 
-	if len(r) != len(exp) {
-		t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp, r)
+	r = httpGet(ctx, t, url)
+	objInfo = r["response"].([]ei)
+
+	if len(objInfo) != len(exp) {
+		t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp, objInfo)
 	}
 
-	for num, obj := range r {
-		exp[num]["id"] = obj["id"]
+	for num, obj := range objInfo {
 		if !reflect.DeepEqual(exp[num], obj) {
 			t.Errorf("unexpected result:\nexp: %v\ngot: %v\n", exp[num], obj)
 		}
 	}
-}
-
-func testSelectObjectsAroundLocation(ctx context.Context, t *testing.T) {
-
-}
-
-func testDeletenUser(ctx context.Context, t *testing.T) {
-
-	var url = getAddr(ctx, "/api/auth/login")
-	var body = msi{
-		"username": testUsername,
-		"password": testPassword,
-	}
-	var tokens = httpPost(ctx, t, url, body)
-	ctx = withToken(ctx, tokens["access_token"].(string))
 }
