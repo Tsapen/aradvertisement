@@ -34,7 +34,8 @@ type authCfg struct {
 }
 
 type httpCfg struct {
-	Port         string `json:"port"`
+	MainPort     string `json:"main_port"`
+	ArPort       string `json:"ar_port"`
 	ReadTimeout  string `json:"read_timeout"`
 	WriteTimeout string `json:"write_timeout"`
 }
@@ -100,8 +101,11 @@ func run(c *config) {
 		panic(fmt.Sprintf("can't prepare ara db: %s", err))
 	}
 
+	fmt.Println(c.HTTP.MainPort, c.HTTP.ArPort)
+
 	var cHTTP = arahttp.Config{
-		Port:         c.HTTP.Port,
+		MainPort:     c.HTTP.MainPort,
+		ArPort:       c.HTTP.ArPort,
 		ReadTimeout:  c.HTTP.ReadTimeout,
 		WriteTimeout: c.HTTP.WriteTimeout,
 		AraDB:        araDB,
@@ -109,15 +113,16 @@ func run(c *config) {
 		Storage:      s,
 	}
 
-	var api *arahttp.API
-	api, err = arahttp.NewAPI(&cHTTP)
+	var servers *arahttp.Servers
+	servers, err = arahttp.NewServers(&cHTTP)
 	if err != nil {
 		panic(fmt.Sprintf("can't start api: %s", err))
 	}
 
-	log.Printf("main: start listening %s", c.HTTP.Port)
+	log.Printf("main: start listening %s", c.HTTP.MainPort)
+	log.Printf("main: start listening %s", c.HTTP.ArPort)
 
-	api.Start(getCertPath(pwd, "/server.crt"), getCertPath(pwd, "/server.key"))
+	servers.Start(getCertPath(pwd, "/server.crt"), getCertPath(pwd, "/server.key"))
 }
 
 func getCertPath(projectDir, fileName string) string {

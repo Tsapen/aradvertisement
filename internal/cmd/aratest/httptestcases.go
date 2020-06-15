@@ -10,6 +10,7 @@ const (
 	testUsername = "test_user"
 	testEmail    = "test@email.com"
 	testPassword = "test_password"
+	objType      = "t"
 
 	lat1     = 50.000000
 	lat2     = 51.000000
@@ -47,9 +48,9 @@ func testLoginUser(ctx context.Context, t *testing.T) {
 
 func getDefaultObjects() smsi {
 	return smsi{
-		msi{"latitude": lat1, "longitude": long1, "comment": comment1, "glTF": []byte{}},
-		msi{"latitude": lat2, "longitude": long2, "comment": comment2, "glTF": []byte{}},
-		msi{"latitude": lat3, "longitude": long3, "comment": comment3, "glTF": []byte{}},
+		msi{"latitude": lat1, "longitude": long1, "type": objType, "comment": comment1, "glTF": []byte{}},
+		msi{"latitude": lat2, "longitude": long2, "type": objType, "comment": comment2, "glTF": []byte{}},
+		msi{"latitude": lat3, "longitude": long3, "type": objType, "comment": comment3, "glTF": []byte{}},
 	}
 }
 

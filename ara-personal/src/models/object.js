@@ -1,8 +1,9 @@
 export default class ObjGLTF {
-    constructor(latitude, longitude, comment, gltf) {
+    constructor(latitude, longitude, comment, type, obj) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.comment = comment;
-        this.gltf = gltf;
+        this.type = type
+        this.obj = obj;
     }
 }

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultSize = 16 * 1024
+	defaultJSONSize = 16 * 1024
 )
 
 func getAddr(ctx context.Context, path string) string {
@@ -61,7 +61,7 @@ func httpGet(ctx context.Context, t *testing.T, url string) msi {
 		badStatusFatal(t, r)
 	}
 
-	var bodyBytes = make([]byte, defaultSize)
+	var bodyBytes = make([]byte, defaultJSONSize)
 	var n int
 	n, err = io.ReadFull(r.Body, bodyBytes)
 	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {

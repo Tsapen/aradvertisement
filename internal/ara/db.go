@@ -6,12 +6,19 @@ type ObjectCreationInfo struct {
 	Latitude  float64
 	Longitude float64
 	Comment   string
+	Type      string
 }
 
 // ObjectSelectInfo is struct for doing select.
 type ObjectSelectInfo struct {
 	Latitude  float64
 	Longitude float64
+}
+
+// ObjectSelectByID is struct for doing select.
+type ObjectSelectByID struct {
+	Username string
+	Type     rune
 }
 
 // ObjectAroundResp contains object information.
@@ -51,6 +58,7 @@ type UserLogin struct {
 type DB interface {
 	CreateObject(ObjectCreationInfo) (int, error)
 	SelectObjectsAround(ObjectSelectInfo) ([]ObjectAroundResp, error)
+	SelectObjectByID(int) (ObjectSelectByID, error)
 	SelectUsersObjects(string) ([]UserObjectSelectResp, error)
 	UpdateObject(ObjectUpdateInfo) error
 	DeleteObject(int) error

@@ -13,41 +13,37 @@ type dbMigration struct {
 
 func araDBMigrations() []dbMigration {
 	return []dbMigration{
-		dbMigration{
+		{
 			number: 1,
-			command: `
-			CREATE TABLE IF NOT EXISTS users(
-					id			SERIAL NOT NULL PRIMARY KEY
-				,	username 	VARCHAR(100) NOT NULL UNIQUE
-				,	password	VARCHAR(100) NOT NULL
-				,	email		VARCHAR(100) NOT NULL
-			);`,
+			command: `CREATE TABLE IF NOT EXISTS users(` +
+				`	id			SERIAL NOT NULL PRIMARY KEY` +
+				`,	username 	VARCHAR(100) NOT NULL UNIQUE` +
+				`,	password	VARCHAR(100) NOT NULL` +
+				`,	email		VARCHAR(100) NOT NULL` +
+				`);`,
 		},
 
-		dbMigration{
-			number: 2,
-			command: `
-			CREATE INDEX usernames ON users USING hash (username);
-			`,
+		{
+			number:  2,
+			command: `CREATE INDEX usernames ON users USING hash (username);`,
 		},
 
-		dbMigration{
+		{
 			number: 3,
-			command: `
-			CREATE TABLE IF NOT EXISTS objects(
-				id			SERIAL NOT NULL PRIMARY KEY
-			,	user_id		INT NOT NULL REFERENCES users(id)
-			,	latitude	VARCHAR(10) NOT NULL
-			,	longitude	VARCHAR(10) NOT NULL
-			,	comment		TEXT
-			);`,
+			command: `CREATE TABLE IF NOT EXISTS objects(` +
+				`	id			SERIAL NOT NULL PRIMARY KEY` +
+				`,	user_id		INT NOT NULL REFERENCES users(id)` +
+				`,	latitude	VARCHAR(10) NOT NULL` +
+				`,	longitude	VARCHAR(10) NOT NULL` +
+				`,	comment		TEXT` +
+				// t - text, i - image, g - glTF
+				`, 	type		CHAR(1) NOT NULL CHECK (type IN ('t','i','g'))` +
+				`);`,
 		},
 
-		dbMigration{
-			number: 4,
-			command: `
-			CREATE INDEX locations ON objects USING hash(latitude, longitude);
-			`,
+		{
+			number:  4,
+			command: `CREATE INDEX locations ON objects USING hash(latitude, longitude);`,
 		},
 	}
 }

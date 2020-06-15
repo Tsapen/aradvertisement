@@ -15,9 +15,9 @@ func TestARA(t *testing.T, hostPort string) {
 	var ctx = withHostPort(context.Background(), hostPort)
 
 	var testcases = []tc{
-		tc{name: "test user registration", testFunc: testRegisterUser},
-		tc{name: "test user login", testFunc: testLoginUser},
-		tc{name: "test user objects CRUD", testFunc: testCRUDObjects},
+		{name: "test user registration", testFunc: testRegisterUser},
+		{name: "test user login", testFunc: testLoginUser},
+		{name: "test user objects CRUD", testFunc: testCRUDObjects},
 	}
 
 	for _, testcase := range testcases {

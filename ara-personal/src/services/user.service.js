@@ -39,11 +39,12 @@ class UserService {
   uploadFile(obj) {
     let formData = new FormData();
     
-    formData.append('gltf', obj.gltf);
+    formData.append('object', obj.obj);
     let info = {
       latitude: parseFloat(obj.latitude),
       longitude: parseFloat(obj.longitude),
-      comment: obj.comment
+      comment: obj.comment,
+      type: obj.type
     };
     formData.append('info', JSON.stringify(info));
     

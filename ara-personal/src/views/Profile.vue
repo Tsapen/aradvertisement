@@ -7,17 +7,31 @@
         <td><input type="text" placeholder='latitude'  v-model="objGLTF.latitude" /></td>
         <td><input type="text" placeholder='longitude' v-model="objGLTF.longitude" /></td>
         <td><input type="text" placeholder='comment'  v-model="objGLTF.comment" /></td>
-        <td><label><input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/></label></td>
-      </tr>
-      <tr><td></td><td></td><td></td><td><button type="button" @click="submitFile()">Create object</button></td></tr>
+
+        <input type="radio" id="one" value="g" v-model="objGLTF.type"><label for="one">glTF</label><td>
+        <label><input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/></label>
+
+        </td></tr><tr><td></td><td></td><td></td><td>
+        <input type="radio" id="two" value="i" v-model="objGLTF.type"><label for="two">Image</label></td><td>
+        <label><input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/></label>
+
+        </td></tr><tr><td></td><td></td><td></td><td>
+        <input type="radio" id="three" value="t" v-model="objGLTF.type"><label for="three">Text</label></td><td>
+        <input type="text" placeholder='input text' v-model="objGLTF.obj" />
+        </td></tr><tr><td></td><td></td><td></td><td></td>
+
+        <td>
+        <button type="button" @click="submitFile()">Create object</button>
+      </td></tr>
       </div>
     </tbody></table>  
     <h1>Your objects</h1>
     <table><tbody>
-      <tr><th>Location</th><th>Comment</th><th></th></tr>
+      <tr><th>Location</th><th>Comment</th><th></th><th></th><th></th></tr>
       <tr v-for="objInfo in objectsInfo" :key=objInfo>
         <td>{{objInfo.location}}</td>
-        <td><textarea type="text" cols="40" rows="3" v-model="objInfo.comment" /></td>
+        <td><textarea type="text" cols="40" rows="2" v-model="objInfo.comment" /></td>
+        <td><a v-bind:href="'https://192.168.1.52:8001/api/ar/page/' + objInfo.id">Show</a></td>
         <td><button type="button" @click="updateObject(objInfo)">Update</button></td>
         <td><button type="button" @click="deleteObject(objInfo.id)">Delete</button></td>
       </tr>
@@ -33,7 +47,7 @@ export default {
   data() {
     return {
       objectsInfo: [],
-      objGLTF: new ObjGLTF('', '', '', '')
+      objGLTF: new ObjGLTF('', '', '', '', '')
     }
   },
   computed: {
@@ -64,12 +78,12 @@ export default {
     },
     
     handleFileUpload(){
-      this.objGLTF.gltf = this.$refs.file.files[0];
+      this.objGLTF.obj = this.$refs.file.files[0];
     },
 
     submitFile(){
       UserServices.uploadFile(this.objGLTF)
-      this.objGLTF = new ObjGLTF('', '', '', '')
+      this.objGLTF = new ObjGLTF('', '', '', '', '')
     }
   }
 };

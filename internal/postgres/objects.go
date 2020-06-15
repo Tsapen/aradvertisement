@@ -6,15 +6,15 @@ import (
 	"github.com/Tsapen/aradvertisement/internal/ara"
 )
 
-// CreateObject put new glTF object path in db.
+// CreateObject puts new glTF object path in db.
 func (s *DB) CreateObject(obj ara.ObjectCreationInfo) (int, error) {
 	var q = `
-	INSERT INTO objects(user_id, latitude, longitude, comment) VALUES ((
+	INSERT INTO objects(user_id, latitude, longitude, comment, type) VALUES ((
 		SELECT id FROM users WHERE users.username = $1), 
-		$2, $3, $4) RETURNING id;`
+		$2, $3, $4, $5) RETURNING id;`
 
 	var id int
-	var err = s.QueryRow(q, obj.Username, obj.Latitude, obj.Longitude, obj.Comment).Scan(&id)
+	var err = s.QueryRow(q, obj.Username, obj.Latitude, obj.Longitude, obj.Comment, obj.Type).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -22,7 +22,7 @@ func (s *DB) CreateObject(obj ara.ObjectCreationInfo) (int, error) {
 	return id, nil
 }
 
-// SelectObjectsAround select glTF object paths from db.
+// SelectObjectsAround selects glTF object paths from db.
 func (s *DB) SelectObjectsAround(params ara.ObjectSelectInfo) (res []ara.ObjectAroundResp, err error) {
 	// 0.00045 degrees gps are approximately equal to 50 meters
 	var q = `SELECT u.username, o.latitude, o.longitude FROM objects o
@@ -50,6 +50,21 @@ func (s *DB) SelectObjectsAround(params ara.ObjectSelectInfo) (res []ara.ObjectA
 	}
 
 	return res, nil
+}
+
+// SelectObjectByID selects object by id.
+func (s *DB) SelectObjectByID(id int) (ara.ObjectSelectByID, error) {
+	var q = `SELECT o.type, u.username 
+			FROM objects o JOIN users u ON o.user_id=u.id 
+			WHERE o.id = $1
+			`
+	var objType, username = "", ""
+
+	if err := s.QueryRow(q, id).Scan(&objType, &username); err != nil {
+		return ara.ObjectSelectByID{}, err
+	}
+
+	return ara.ObjectSelectByID{Type: rune(objType[0]), Username: username}, nil
 }
 
 // SelectUsersObjects selects objects of user.
@@ -81,7 +96,7 @@ func (s *DB) SelectUsersObjects(username string) (res []ara.UserObjectSelectResp
 	return res, nil
 }
 
-// UpdateObject delete object info from db.
+// UpdateObject deletes object info from db.
 func (s *DB) UpdateObject(obj ara.ObjectUpdateInfo) error {
 	var q = `UPDATE objects SET
 				comment = $1 WHERE
@@ -91,7 +106,7 @@ func (s *DB) UpdateObject(obj ara.ObjectUpdateInfo) error {
 	return err
 }
 
-// DeleteObject delete object info from db.
+// DeleteObject deletes object info from db.
 func (s *DB) DeleteObject(id int) error {
 	var q = `DELETE FROM objects o WHERE id = $1;`
 

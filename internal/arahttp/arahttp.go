@@ -10,6 +10,7 @@ import (
 	"github.com/Tsapen/aradvertisement/internal/auth"
 	"github.com/Tsapen/aradvertisement/internal/filestore"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 // API contains configured http.Server.
@@ -17,10 +18,17 @@ type API struct {
 	*http.Server
 }
 
+// Servers contains all APIs.
+type Servers struct {
+	mainAPI      *API
+	templatesAPI *API
+}
+
 // Config for running http server.
 type Config struct {
 	Addr         string
-	Port         string
+	MainPort     string
+	ArPort       string
 	ReadTimeout  string
 	WriteTimeout string
 	AraDB        ara.DB
@@ -29,12 +37,14 @@ type Config struct {
 }
 
 type handler struct {
-	port    string
-	araDB   ara.DB
-	authDB  auth.DB
-	router  *mux.Router
-	storage *filestore.Storage
-	tmps    templates
+	mainPort     string
+	ArPort       string
+	araDB        ara.DB
+	authDB       auth.DB
+	router       *mux.Router
+	storage      *filestore.Storage
+	tmps         *templates
+	templMethods map[rune]func(http.ResponseWriter, string, int) error
 }
 
 type templates struct {
@@ -43,20 +53,31 @@ type templates struct {
 	GLTF *template.Template
 }
 
-// NewAPI creates new api.
-func NewAPI(config *Config) (*API, error) {
+// NewServers creates new servers.
+func NewServers(config *Config) (*Servers, error) {
+	var err error
 	r := mux.NewRouter()
 	var h = handler{
-		port:    config.Port,
-		araDB:   config.AraDB,
-		authDB:  config.AuthDB,
-		router:  r,
-		storage: config.Storage,
+		mainPort: config.MainPort,
+		araDB:    config.AraDB,
+		authDB:   config.AuthDB,
+		router:   r,
+		storage:  config.Storage,
+	}
+
+	h.tmps, err = newTemplates(h.storage)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse templates")
+	}
+
+	h.templMethods = map[rune]func(http.ResponseWriter, string, int) error{
+		't': h.getTextTemplate,
+		'i': h.getImageTemplate,
+		'g': h.getGLTFTemplate,
 	}
 
 	// Object handlers API.
-	r.HandleFunc("/api/objects_around", h.objectsByLocation).
-		Queries("latitude", "{latitude}", "longitude", "{longitude}").Methods(http.MethodGet)
+	r.HandleFunc("/api/nearest_objects", h.objectsByLocation).Methods(http.MethodGet)
 	r.HandleFunc("/api/user_objects", h.userObjects).Methods(http.MethodGet)
 	r.HandleFunc("/api/object", h.newObject).Methods(http.MethodPost)
 	r.HandleFunc("/api/object/upd", h.updateObject).Methods(http.MethodPost)
@@ -68,12 +89,16 @@ func NewAPI(config *Config) (*API, error) {
 	r.HandleFunc("/api/auth/logout", h.logout).Methods(http.MethodPost)
 	r.HandleFunc("/api/auth/refresh", h.refresh).Methods(http.MethodPost)
 
-	r.HandleFunc("/api/ar", h.arPage).
-		Queries("id", "{id}").Methods(http.MethodGet)
+	r.HandleFunc("/api/objects_around", h.objectsByLocation).
+		Queries("latitude", "{latitude}", "longitude", "{longitude}").Methods(http.MethodGet)
+	r.HandleFunc("/api/ar/page/{id}", h.arPage).Methods(http.MethodGet)
+	r.HandleFunc("/api/ar/object", h.arObject).
+		Queries("user", "{user}", "file", "{file}").Methods(http.MethodGet)
 
 	var wrappedHandler = withHeaders(h.router)
 
-	var readTimeout, err = time.ParseDuration(config.ReadTimeout)
+	var readTimeout time.Duration
+	readTimeout, err = time.ParseDuration(config.ReadTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +109,27 @@ func NewAPI(config *Config) (*API, error) {
 		return nil, err
 	}
 
-	var s = newServer(config.Port, wrappedHandler, readTimeout, writeTimeout)
+	var mainServer = newHTTPServer(config.MainPort, wrappedHandler, readTimeout, writeTimeout)
+	var templatesServer = newHTTPSServer(config.ArPort, wrappedHandler, readTimeout, writeTimeout)
 
-	return &API{s}, nil
+	var s = &Servers{
+		mainAPI:      &API{mainServer},
+		templatesAPI: &API{templatesServer},
+	}
+	return s, nil
 }
 
-func newServer(addr string, h http.Handler, rt, wt time.Duration) *http.Server {
+func newHTTPServer(addr string, h http.Handler, rt, wt time.Duration) *http.Server {
+	return &http.Server{
+		Addr:         addr,
+		Handler:      h,
+		ReadTimeout:  rt,
+		WriteTimeout: wt,
+	}
+}
 
-	// certManager := autocert.Manager{
+func newHTTPSServer(addr string, h http.Handler, rt, wt time.Duration) *http.Server {
+	// var certManager = autocert.Manager{
 	// 	Prompt:     autocert.AcceptTOS,
 	// 	HostPolicy: autocert.HostWhitelist("192.168.1.52"),
 	// 	Cache:      autocert.DirCache("certs"),
@@ -111,9 +149,14 @@ func newServer(addr string, h http.Handler, rt, wt time.Duration) *http.Server {
 }
 
 // Start run server.
-func (a *API) Start(crt, key string) {
-	if err := a.ListenAndServeTLS(crt, key); err != nil {
-		// if err := a.ListenAndServe(); err != nil {
+func (s *Servers) Start(crt, key string) {
+	go func(crt, key string) {
+		if err := s.templatesAPI.ListenAndServeTLS(crt, key); err != nil {
+			log.Printf("api.Start error: %s\n", err)
+		}
+	}(crt, key)
+
+	if err := s.mainAPI.ListenAndServe(); err != nil {
 		log.Printf("api.Start error: %s\n", err)
 	}
 }

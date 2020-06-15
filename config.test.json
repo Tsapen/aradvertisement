@@ -3,24 +3,24 @@
 ,   "storage_directory":"./"
 
 ,   "auth": {
-       "set_manually": true
+        "set_manually": true
     ,   "access_secret": "jdnfksdmfksd"
     ,   "refresh_secret": "mcmvmkmsdnfsdmfdsjf"
     }
 
 ,   "http": {
         "main_port":":8000"
-    ,   "ar_port":":8001"
+    ,   "ar_port": ":8001"
     ,   "read_timeout": "10s"
     ,   "write_timeout": "10s"
     }
 
 ,   "ara_db": {
-        "username": "ara_user"
-    ,   "password": "ara_password"
+        "username": "test_ara_user"
+    ,   "password": "test_ara_password"
     ,   "hostname": "localhost"
     ,   "port": "5432"
-    ,   "virtual_host": "ara_db"
+    ,   "virtual_host": "test_ara_db"
     }
 
 ,   "redis": {

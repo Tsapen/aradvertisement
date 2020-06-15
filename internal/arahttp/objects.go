@@ -120,6 +120,7 @@ type newObjectReq struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
 	Comment   string  `json:"comment"`
+	Type      string  `json:"type"`
 }
 
 func (h *handler) newObject(w http.ResponseWriter, r *http.Request) {
@@ -148,6 +149,7 @@ func (h *handler) newObject(w http.ResponseWriter, r *http.Request) {
 		Latitude:  obj.Latitude,
 		Longitude: obj.Longitude,
 		Comment:   obj.Comment,
+		Type:      obj.Type,
 	}
 	var pars = ara.ObjectCreationInfo(creationInfo)
 

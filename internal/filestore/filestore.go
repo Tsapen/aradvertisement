@@ -13,9 +13,8 @@ type Storage struct {
 }
 
 const (
-	arPage         = "AR.html"
-	storageDirName = "gltf_storage"
-	maxFileSize    = 16 * 1024 * 1024
+	arPage         = "example.html"
+	storageDirName = "objects_storage"
 )
 
 // FileMetadata contains metadata for object found.
@@ -69,20 +68,25 @@ func (s *Storage) DeleteUserDir(dir string) error {
 // WriteFile writes file to path.
 func (s *Storage) WriteFile(fm FileMetadata, b []byte) (err error) {
 	var filePath = filepath.Join(s.storagePath, fm.Username, fm.Name)
-	err = ioutil.WriteFile(filePath+".gltf", b, 0777)
+	err = ioutil.WriteFile(filePath, b, 0777)
 	return
 }
 
 // ReadFile reads file.
 func (s *Storage) ReadFile(fm FileMetadata) ([]byte, error) {
 	var filePath = filepath.Join(s.storagePath, fm.Username, fm.Name)
-	return ioutil.ReadFile(filePath + ".gltf")
+	return ioutil.ReadFile(filePath)
+}
+
+// GetObjPath returns object path.
+func (s *Storage) GetObjPath(fm FileMetadata) string {
+	return filepath.Join(s.storagePath, fm.Username, fm.Name)
 }
 
 // DeleteFile deletes file.
 func (s *Storage) DeleteFile(fm FileMetadata) error {
 	var filePath = filepath.Join(s.storagePath, fm.Username, fm.Name)
-	return os.Remove(filePath + ".gltf")
+	return os.Remove(filePath)
 }
 
 // GetARPage returns ar page.
@@ -91,7 +95,7 @@ func (s *Storage) GetARPage() ([]byte, error) {
 }
 
 func (s *Storage) getPage(page string) ([]byte, error) {
-	var path = filepath.Join("ara-personal", "src", "views", "html", page)
+	var path = s.GetTemplatePath(page)
 
 	var f, err = ioutil.ReadFile(path)
 	if err != nil {
@@ -99,4 +103,9 @@ func (s *Storage) getPage(page string) ([]byte, error) {
 	}
 
 	return f, nil
+}
+
+// GetTemplatePath returns template tmpl path.
+func (s *Storage) GetTemplatePath(tmpl string) string {
+	return filepath.Join("ara-personal", "ar-templates", tmpl)
 }

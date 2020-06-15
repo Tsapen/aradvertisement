@@ -21,6 +21,7 @@ services:
     build: .
     ports:
       - 8000:8000
+      - 8001:8001
     depends_on: 
       - ara_db
       - auth_db

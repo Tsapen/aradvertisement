@@ -38,7 +38,7 @@ func TestARA(t *testing.T) {
 	var c = openConfig(cPath)
 	cleanUpDB(t, c)
 	go run(c)
-	var addr = "localhost" + c.HTTP.Port
+	var addr = "localhost" + c.HTTP.MainPort
 	waitRunning(t, addr)
 
 	aratest.TestARA(t, addr)

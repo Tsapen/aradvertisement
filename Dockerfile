@@ -22,6 +22,7 @@ RUN go build internal/cmd/main.go
     
 # Export necessary port
 EXPOSE 8000
+EXPOSE 8001
 
 # # Command to run when starting the container
 CMD ["./main"]
